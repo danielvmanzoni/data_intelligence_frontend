@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { useAuthExtended } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -42,7 +42,7 @@ interface MenuItem {
 
 export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname()
-    const { user, tenant, logout, getAccessLevel, getBrandName, getTenantTypeLabel } = useAuthExtended()
+    const { user, tenant, logout, getAccessLevel, getBrandName, getTenantTypeLabel } = useAuth()
     const [expandedSections, setExpandedSections] = useState<string[]>(['main'])
 
     const toggleSection = (section: string) => {
@@ -51,6 +51,15 @@ export function Sidebar({ className }: SidebarProps) {
                 ? prev.filter(s => s !== section)
                 : [...prev, section]
         )
+    }
+
+    // Função para construir links com o tenant
+    const buildLink = (href: string) => {
+        // Se o href já começa com /, adicionar o tenant
+        if (href.startsWith('/')) {
+            return `/${tenant?.subdomain}${href}`
+        }
+        return href
     }
 
     const getMenuItems = (): MenuItem[] => {
@@ -180,7 +189,7 @@ export function Sidebar({ className }: SidebarProps) {
     }
 
     const renderMenuItem = (item: MenuItem, depth = 0) => {
-        const isActive = pathname === item.href
+        const isActive = pathname === buildLink(item.href)
         const hasChildren = item.children && item.children.length > 0
         const isExpanded = expandedSections.includes(item.href)
 
@@ -221,7 +230,7 @@ export function Sidebar({ className }: SidebarProps) {
         return (
             <Link
                 key={item.href}
-                href={item.href}
+                href={buildLink(item.href)}
                 className={cn(
                     'flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground',
                     isActive && 'bg-accent text-accent-foreground',

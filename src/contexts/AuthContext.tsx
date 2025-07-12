@@ -1,18 +1,40 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, Tenant, LoginRequest, AuthContext as AuthContextType } from '@/types/api'
-import { authService } from '@/lib/api'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-interface AuthProviderProps {
-    children: ReactNode
+interface User {
+    id: number
+    name: string
+    email: string
+    role: string
+    tenant: {
+        id: number
+        name: string
+        subdomain: string
+        cnpj: string
+        brand: string
+        segment: string
+    }
 }
 
-// Contexto de autenticação
+interface AuthContextType {
+    user: User | null
+    currentTenant: string | null
+    token: string | null
+    isAuthenticated: boolean
+    isLoading: boolean
+    login: (tenant: string, email: string, password: string) => Promise<void>
+    logout: () => void
+    getAccessLevel: () => string
+    getBrandName: () => string
+    getTenantTypeLabel: () => string
+    getSegmentLabel: () => string
+    tenant: User['tenant'] | null
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
-// Hook para usar o contexto de autenticação
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
     const context = useContext(AuthContext)
     if (!context) {
         throw new Error('useAuth deve ser usado dentro de um AuthProvider')
@@ -20,262 +42,132 @@ export const useAuth = (): AuthContextType => {
     return context
 }
 
-// Provider de autenticação
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null)
-    const [tenant, setTenant] = useState<Tenant | null>(null)
+    const [currentTenant, setCurrentTenant] = useState<string | null>(null)
     const [token, setToken] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isInitialized, setIsInitialized] = useState(false)
 
-    const isAuthenticated = !!user && !!token
-
-    // Carregar dados do usuário autenticado ao inicializar
+    // Inicializar dados do localStorage apenas uma vez
     useEffect(() => {
-        const loadUser = async () => {
+        if (isInitialized) return
+
+        const initializeAuth = () => {
             try {
-                const storedToken = authService.getToken()
-                if (storedToken) {
-                    setToken(storedToken)
-                    const currentUser = await authService.getCurrentUser()
-                    setUser(currentUser)
-                    setTenant(currentUser.tenant || null)
+                const savedToken = localStorage.getItem('authToken')
+                const savedTenant = localStorage.getItem('currentTenant')
+                const savedUser = localStorage.getItem('user')
+
+                if (savedToken && savedTenant && savedUser) {
+                    const parsedUser = JSON.parse(savedUser)
+                    setToken(savedToken)
+                    setCurrentTenant(savedTenant)
+                    setUser(parsedUser)
                 }
             } catch (error) {
-                console.error('Erro ao carregar usuário:', error)
-                // Token inválido, fazer logout
-                logout()
+                console.error('Erro ao inicializar autenticação:', error)
+                // Limpar dados corrompidos
+                localStorage.removeItem('authToken')
+                localStorage.removeItem('currentTenant')
+                localStorage.removeItem('user')
             } finally {
                 setIsLoading(false)
+                setIsInitialized(true)
             }
         }
 
-        loadUser()
-    }, [])
+        initializeAuth()
+    }, [isInitialized])
 
-    // Função de login
-    const login = async (credentials: LoginRequest): Promise<void> => {
+    const login = async (tenant: string, email: string, password: string) => {
         try {
-            setIsLoading(true)
-            const response = await authService.login(credentials)
+            const response = await fetch(`http://localhost:3010/${tenant}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            })
 
-            setToken(response.token)
-            setUser(response.user)
-            setTenant(response.tenant)
+            if (!response.ok) {
+                throw new Error('Login failed')
+            }
+
+            const data = await response.json()
+
+            // Salvar no localStorage
+            localStorage.setItem('authToken', data.access_token)
+            localStorage.setItem('currentTenant', tenant)
+            localStorage.setItem('user', JSON.stringify(data.user))
+
+            // Atualizar estado
+            setToken(data.access_token)
+            setCurrentTenant(tenant)
+            setUser(data.user)
+
         } catch (error) {
-            console.error('Erro no login:', error)
+            // Limpar dados em caso de erro
+            localStorage.removeItem('authToken')
+            localStorage.removeItem('currentTenant')
+            localStorage.removeItem('user')
+
+            setToken(null)
+            setCurrentTenant(null)
+            setUser(null)
+
             throw error
-        } finally {
-            setIsLoading(false)
         }
     }
 
-    // Função de logout
-    const logout = (): void => {
-        setUser(null)
-        setTenant(null)
+    const logout = () => {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('currentTenant')
+        localStorage.removeItem('user')
+
         setToken(null)
-        authService.logout()
+        setCurrentTenant(null)
+        setUser(null)
     }
 
-    // Função para atualizar dados do usuário
-    const updateUser = (updatedUser: User): void => {
-        setUser(updatedUser)
-        if (updatedUser.tenant) {
-            setTenant(updatedUser.tenant)
-        }
+    const getAccessLevel = (): string => {
+        if (!user) return 'guest'
+        return user.role || 'user'
     }
 
-    // Função para verificar se o usuário tem uma role específica
-    const hasRole = (role: string): boolean => {
-        return user?.role === role
-    }
-
-    // Função para verificar se o usuário tem acesso a um tenant específico
-    const hasAccessToTenant = (tenantId: string): boolean => {
-        if (!user || !tenant) return false
-
-        // Crown Admin tem acesso a tudo
-        if (user.role === 'CROWN_ADMIN') return true
-
-        // Franchisor Admin tem acesso ao seu tenant e suas franquias
-        if (user.role === 'FRANCHISOR_ADMIN') {
-            if (tenant.id === tenantId) return true
-            if (tenant.childTenants?.some(child => child.id === tenantId)) return true
-        }
-
-        // Outros usuários só têm acesso ao seu próprio tenant
-        return tenant.id === tenantId
-    }
-
-    // Função para verificar se o usuário tem acesso a uma marca específica
-    const hasAccessToBrand = (brand: string): boolean => {
-        if (!user || !tenant) return false
-
-        // Crown Admin tem acesso a tudo
-        if (user.role === 'CROWN_ADMIN') return true
-
-        // Outros usuários só têm acesso à sua própria marca
-        return tenant.brand === brand
-    }
-
-    // Função para verificar se o usuário tem acesso a um segmento específico
-    const hasAccessToSegment = (segment: string): boolean => {
-        if (!user || !tenant) return false
-
-        // Crown Admin tem acesso a tudo
-        if (user.role === 'CROWN_ADMIN') return true
-
-        // Outros usuários só têm acesso ao seu próprio segmento
-        return tenant.segment === segment
-    }
-
-    // Função para verificar se o usuário pode criar/editar tenants
-    const canManageTenants = (): boolean => {
-        if (!user) return false
-
-        return ['CROWN_ADMIN', 'FRANCHISOR_ADMIN'].includes(user.role)
-    }
-
-    // Função para verificar se o usuário pode criar/editar usuários
-    const canManageUsers = (): boolean => {
-        if (!user) return false
-
-        return ['CROWN_ADMIN', 'FRANCHISOR_ADMIN', 'FRANCHISE_ADMIN'].includes(user.role)
-    }
-
-    // Função para verificar se o usuário pode gerenciar tickets
-    const canManageTickets = (): boolean => {
-        if (!user) return false
-
-        return ['CROWN_ADMIN', 'FRANCHISOR_ADMIN', 'FRANCHISE_ADMIN', 'AGENT'].includes(user.role)
-    }
-
-    // Função para verificar se o usuário pode ver relatórios
-    const canViewReports = (): boolean => {
-        if (!user) return false
-
-        return ['CROWN_ADMIN', 'FRANCHISOR_ADMIN', 'FRANCHISE_ADMIN'].includes(user.role)
-    }
-
-    // Função para obter o nível de acesso do usuário
-    const getAccessLevel = (): 'CROWN' | 'FRANCHISOR' | 'FRANCHISE' | 'USER' => {
-        if (!user) return 'USER'
-
-        if (user.role === 'CROWN_ADMIN') return 'CROWN'
-        if (user.role === 'FRANCHISOR_ADMIN') return 'FRANCHISOR'
-        if (user.role === 'FRANCHISE_ADMIN') return 'FRANCHISE'
-
-        return 'USER'
-    }
-
-    // Função para obter o nome da marca/empresa
     const getBrandName = (): string => {
-        if (!tenant) return ''
-
-        if (tenant.type === 'CROWN') return 'Crown Company'
-        if (tenant.brand) return tenant.brand
-
-        return tenant.name
+        if (!user?.tenant) return 'Sistema'
+        return user.tenant.brand || user.tenant.name
     }
 
-    // Função para obter o tipo de tenant em português
     const getTenantTypeLabel = (): string => {
-        if (!tenant) return ''
-
-        switch (tenant.type) {
-            case 'CROWN':
-                return 'Crown Company'
-            case 'FRANCHISOR':
-                return 'Franqueador'
-            case 'FRANCHISE':
-                return 'Franquia'
-            default:
-                return tenant.type
-        }
+        if (!user?.tenant) return 'Sistema'
+        return user.tenant.segment || 'Geral'
     }
 
-    // Função para obter o segmento em português
     const getSegmentLabel = (): string => {
-        if (!tenant) return ''
-
-        switch (tenant.segment) {
-            case 'MODA':
-                return 'Moda'
-            case 'FOOD':
-                return 'Alimentação'
-            case 'FARMA':
-                return 'Farmácia'
-            case 'TECH':
-                return 'Tecnologia'
-            case 'BEAUTY':
-                return 'Beleza'
-            case 'SPORT':
-                return 'Esporte'
-            case 'OTHER':
-                return 'Outros'
-            default:
-                return tenant.segment
-        }
+        if (!user?.tenant) return 'Sistema'
+        return user.tenant.segment || 'Geral'
     }
 
     const value: AuthContextType = {
         user,
-        tenant,
+        currentTenant,
         token,
-        isAuthenticated,
+        isAuthenticated: !!token && !!user && isInitialized,
+        isLoading,
         login,
         logout,
-        // Funções adicionais não estão no tipo base, então vou criar um tipo estendido
-    }
-
-    // Adicionar funções extras ao contexto
-    const extendedValue = {
-        ...value,
-        isLoading,
-        updateUser,
-        hasRole,
-        hasAccessToTenant,
-        hasAccessToBrand,
-        hasAccessToSegment,
-        canManageTenants,
-        canManageUsers,
-        canManageTickets,
-        canViewReports,
         getAccessLevel,
         getBrandName,
         getTenantTypeLabel,
         getSegmentLabel,
+        tenant: user?.tenant || null
     }
 
     return (
-        <AuthContext.Provider value={extendedValue as unknown as AuthContextType}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     )
-}
-
-// Hook para usar as funções estendidas do contexto
-export const useAuthExtended = () => {
-    const context = useContext(AuthContext)
-    if (!context) {
-        throw new Error('useAuthExtended deve ser usado dentro de um AuthProvider')
-    }
-    return context as AuthContextType & {
-        isLoading: boolean
-        updateUser: (user: User) => void
-        hasRole: (role: string) => boolean
-        hasAccessToTenant: (tenantId: string) => boolean
-        hasAccessToBrand: (brand: string) => boolean
-        hasAccessToSegment: (segment: string) => boolean
-        canManageTenants: () => boolean
-        canManageUsers: () => boolean
-        canManageTickets: () => boolean
-        canViewReports: () => boolean
-        getAccessLevel: () => 'CROWN' | 'FRANCHISOR' | 'FRANCHISE' | 'USER'
-        getBrandName: () => string
-        getTenantTypeLabel: () => string
-        getSegmentLabel: () => string
-    }
-}
-
-export default AuthProvider 
+} 

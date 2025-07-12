@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, PlayCircle, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { tenantService, authService } from '@/lib/api'
+import { PlayCircle, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { authService } from '@/lib/api'
 
 interface TestResult {
     name: string
@@ -17,9 +17,9 @@ export function ApiTestPanel() {
     const [isRunning, setIsRunning] = useState(false)
     const [testResults, setTestResults] = useState<TestResult[]>([
         { name: 'Conexão com API', status: 'idle' },
-        { name: 'Novos Endpoints', status: 'idle' },
-        { name: 'Autenticação', status: 'idle' },
-        { name: 'Busca por CNPJ', status: 'idle' }
+        { name: 'Listar Tenants', status: 'idle' },
+        { name: 'Autenticação Crown', status: 'idle' },
+        { name: 'Autenticação Lacoste', status: 'idle' }
     ])
 
     const updateTestResult = (index: number, status: TestResult['status'], message?: string) => {
@@ -41,49 +41,53 @@ export function ApiTestPanel() {
         }
     }
 
-    // Função para testar novos endpoints
-    const testNewEndpoints = async (): Promise<boolean> => {
+    // Função para testar listagem de tenants
+    const testListTenants = async (): Promise<boolean> => {
         try {
-            await tenantService.getBrands()
-            await tenantService.getSegments()
-            await tenantService.getAll()
-            console.log('✅ Novos endpoints funcionando')
+            const response = await fetch('http://localhost:3010/tenants')
+            const tenants = await response.json()
+            console.log('✅ Tenants encontrados:', tenants.length)
             return true
         } catch (error) {
-            console.error('❌ Erro ao testar endpoints:', error)
+            console.error('❌ Erro ao listar tenants:', error)
             return false
         }
     }
 
-    // Função para testar autenticação
-    const testAuthentication = async (): Promise<boolean> => {
+    // Função para testar autenticação Crown
+    const testCrownAuthentication = async (): Promise<boolean> => {
         try {
             const crownCredentials = {
-                cnpj: '00.000.000/0001-00',
                 email: 'admin@crown.com',
-                password: 'crown123'
+                password: 'crown123',
+                tenant: 'crown'
             }
 
             const response = await authService.login(crownCredentials)
-            console.log('✅ Login realizado:', response.user.name)
+            console.log('✅ Login Crown realizado:', response.user.name)
             authService.logout()
             return true
         } catch (error) {
-            console.error('❌ Erro na autenticação:', error)
+            console.error('❌ Erro na autenticação Crown:', error)
             return false
         }
     }
 
-    // Função para testar busca por CNPJ
-    const testCnpjSearch = async (): Promise<boolean> => {
+    // Função para testar autenticação Lacoste
+    const testLacosteAuthentication = async (): Promise<boolean> => {
         try {
-            const crownCnpj = '00.000.000/0001-00'
-            const encodedCnpj = encodeURIComponent(crownCnpj)
-            const tenant = await tenantService.getByCnpj(encodedCnpj)
-            console.log('✅ Tenant encontrado:', tenant.name)
+            const lacosteCredentials = {
+                email: 'admin@lacoste.com',
+                password: 'lacoste123',
+                tenant: 'lacoste-matriz'
+            }
+
+            const response = await authService.login(lacosteCredentials)
+            console.log('✅ Login Lacoste realizado:', response.user.name)
+            authService.logout()
             return true
         } catch (error) {
-            console.error('❌ Erro ao buscar por CNPJ:', error)
+            console.error('❌ Erro na autenticação Lacoste:', error)
             return false
         }
     }
@@ -109,9 +113,9 @@ export function ApiTestPanel() {
 
         // Executar testes um por um
         await runIndividualTest('Conexão com API', testApiConnection)
-        await runIndividualTest('Novos Endpoints', testNewEndpoints)
-        await runIndividualTest('Autenticação', testAuthentication)
-        await runIndividualTest('Busca por CNPJ', testCnpjSearch)
+        await runIndividualTest('Listar Tenants', testListTenants)
+        await runIndividualTest('Autenticação Crown', testCrownAuthentication)
+        await runIndividualTest('Autenticação Lacoste', testLacosteAuthentication)
 
         setIsRunning(false)
     }
@@ -206,8 +210,10 @@ export function ApiTestPanel() {
 
                     <p><strong>📋 Credenciais de teste:</strong></p>
                     <ul className="space-y-1 ml-4">
-                        <li>• Crown: 00.000.000/0001-00 | admin@crown.com | crown123</li>
-                        <li>• Lacoste: 11.111.111/0001-11 | admin@lacoste.com | lacoste123</li>
+                        <li>• Crown: admin@crown.com | crown123 | tenant: crown</li>
+                        <li>• Lacoste: admin@lacoste.com | lacoste123 | tenant: lacoste-matriz</li>
+                        <li>• McDonald&apos;s: admin@mcdonalds.com | mcdonalds123 | tenant: mcdonalds-matriz</li>
+                        <li>• Drogasil: admin@drogasil.com | drogasil123 | tenant: drogasil-matriz</li>
                     </ul>
                 </div>
             </CardContent>

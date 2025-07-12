@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuthExtended } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -65,7 +66,10 @@ export function Header({
         getBrandName,
         getTenantTypeLabel,
         getSegmentLabel
-    } = useAuthExtended()
+    } = useAuth()
+
+    const router = useRouter()
+    const pathname = usePathname()
 
     const [searchValue, setSearchValue] = useState('')
     const [selectedBrand, setSelectedBrand] = useState<string>('')
@@ -75,6 +79,13 @@ export function Header({
     const accessLevel = getAccessLevel()
     const canSelectBrand = accessLevel === 'CROWN'
     const canSelectSegment = accessLevel === 'CROWN'
+
+    const handleLogout = () => {
+        logout()
+        // Redirecionar para a página de login do tenant atual
+        const currentTenant = pathname?.split('/')[1] || 'crown'
+        router.replace(`/${currentTenant}/login`)
+    }
 
     const getAccessLevelIcon = () => {
         switch (accessLevel) {
@@ -285,8 +296,7 @@ export function Header({
                                 mockNotifications.map((notification) => (
                                     <DropdownMenuItem key={notification.id} className="p-3">
                                         <div className="flex items-start space-x-3">
-                                            <div className={`h-2 w-2 rounded-full ${notification.read ? 'bg-muted' : 'bg-primary'
-                                                }`} />
+                                            <div className={`h-2 w-2 rounded-full ${notification.read ? 'bg-muted' : 'bg-primary'}`} />
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium truncate">
                                                     {notification.title}
@@ -319,7 +329,7 @@ export function Header({
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={user.avatar} alt={user.name} />
+                                <AvatarImage src="" alt={user.name} />
                                 <AvatarFallback>
                                     {user.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
@@ -343,7 +353,7 @@ export function Header({
                             Configurações
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={logout}>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             Sair
                         </DropdownMenuItem>

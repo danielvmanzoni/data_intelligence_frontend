@@ -151,66 +151,61 @@ class ApiClient {
 // Instância global do cliente API
 const apiClient = new ApiClient();
 
+// Tipo para resposta da API de login
+interface ApiLoginResponse {
+  access_token: string;
+  user: User;
+}
+
 // Serviços de Autenticação
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       console.log("🔄 Fazendo login com:", {
-        cnpj: credentials.cnpj,
         email: credentials.email,
+        tenant: credentials.tenant,
       });
 
-      const response = await apiClient.post<LoginResponse>(
-        "/auth/login",
-        credentials
+      // Validar se o tenant foi fornecido
+      if (!credentials.tenant) {
+        throw new Error("Tenant é obrigatório para o login");
+      }
+
+      // Usar o endpoint específico do tenant
+      const response = await apiClient.post<ApiLoginResponse>(
+        `/${credentials.tenant}/auth/login`,
+        {
+          email: credentials.email,
+          password: credentials.password,
+        }
       );
 
       console.log("📡 Resposta da API:", response);
 
-      // Se a resposta tem success e data, usar o padrão antigo
+      // A API retorna diretamente o objeto com access_token e user
       if (response.success && response.data) {
-        console.log(
-          "✅ Login com padrão antigo - token:",
-          response.data.token?.slice(0, 20) + "..."
-        );
-        apiClient.setToken(response.data.token);
-        return response.data;
-      }
+        const data = response.data;
 
-      // Se a resposta tem token diretamente, é a nova API
-      if (
-        response.data &&
-        typeof response.data === "object" &&
-        "token" in response.data &&
-        typeof response.data.token === "string"
-      ) {
-        console.log(
-          "✅ Login com nova API - token:",
-          response.data.token.slice(0, 20) + "..."
-        );
-        apiClient.setToken(response.data.token);
-        return response.data as LoginResponse;
-      }
+        // Verificar se a resposta tem a estrutura esperada
+        if ("access_token" in data && "user" in data) {
+          console.log(
+            "✅ Login bem-sucedido - token:",
+            data.access_token.slice(0, 20) + "..."
+          );
 
-      // Se a resposta contém token diretamente (sem data wrapper)
-      if (
-        response &&
-        typeof response === "object" &&
-        "token" in response &&
-        "user" in response &&
-        "tenant" in response
-      ) {
-        const loginResponse = response as unknown as LoginResponse;
-        const token = loginResponse.token;
-        if (typeof token === "string") {
-          console.log("✅ Login direto - token:", token.slice(0, 20) + "...");
-          apiClient.setToken(token);
-          return loginResponse;
+          // Armazenar o token
+          apiClient.setToken(data.access_token);
+
+          // Retornar no formato esperado pelo frontend
+          return {
+            token: data.access_token,
+            user: data.user,
+            tenant: data.user.tenant || null,
+          };
         }
       }
 
-      console.error("❌ Estrutura de resposta inesperada:", response);
-      throw new Error(response.error || "Estrutura de resposta inesperada");
+      throw new Error("Resposta da API inválida");
     } catch (error) {
       console.error("❌ Erro no login:", error);
       throw error;
@@ -222,11 +217,8 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>("/auth/me");
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error || "Erro ao obter usuário atual");
+    // Endpoint não existe na API atual
+    throw new Error("Endpoint getCurrentUser não implementado");
   },
 
   async refreshToken(): Promise<LoginResponse> {
@@ -235,7 +227,7 @@ export const authService = {
       apiClient.setToken(response.data.token);
       return response.data;
     }
-    throw new Error(response.error || "Erro ao renovar token");
+    throw new Error("Falha ao atualizar token");
   },
 
   getToken(): string | null {

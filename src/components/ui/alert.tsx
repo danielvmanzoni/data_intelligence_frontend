@@ -4,13 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-    "relative w-full rounded-lg border border-border px-4 py-3 text-sm [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+    "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
     {
         variants: {
             variant: {
-                default: "bg-background text-foreground",
+                default: "bg-background text-foreground border-border/50 dark:border-border/30 dark:bg-background/95",
                 destructive:
-                    "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+                    "border-destructive/50 text-destructive dark:border-destructive/30 dark:text-destructive-foreground bg-destructive/10 dark:bg-destructive/20 [&>svg]:text-destructive dark:[&>svg]:text-destructive-foreground",
+                success: "border-green-600/50 text-green-600 dark:border-green-500/30 dark:text-green-400 bg-green-600/10 dark:bg-green-500/20 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+                warning: "border-yellow-600/50 text-yellow-600 dark:border-yellow-500/30 dark:text-yellow-400 bg-yellow-600/10 dark:bg-yellow-500/20 [&>svg]:text-yellow-600 dark:[&>svg]:text-yellow-400",
             },
         },
         defaultVariants: {
@@ -50,7 +52,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("text-sm [&_p]:leading-relaxed", className)}
+        className={cn("text-sm [&_p]:leading-relaxed opacity-90", className)}
         {...props}
     />
 ))
