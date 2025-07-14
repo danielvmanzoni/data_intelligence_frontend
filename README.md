@@ -1,96 +1,154 @@
-# Data Intelligence Frontend
+# Data Intelligence Frontend - Demo
 
-Sistema Multi-Tenant de Gestão de Tickets construído com Next.js 15 e TypeScript.
+Este é o frontend do sistema de Data Intelligence, uma aplicação multi-tenant para gestão de tickets e suporte.
 
-## 🚀 Como Usar
+## 🚀 Configuração do Ambiente
 
-### 1. Instalar dependências
+### Pré-requisitos
+
+- Node.js 18+ (recomendado: 20.x)
+- pnpm 8+ (recomendado: última versão)
+- API rodando localmente (veja a seção API abaixo)
+
+### Instalação
+
+1. Clone o repositório:
 ```bash
-npm install
+git clone [URL_DO_REPOSITORIO]
+cd data_intelligence_frontend
 ```
 
-### 2. Configurar variáveis de ambiente
-Crie um arquivo `.env.local` com:
+2. Mude para a branch demo:
+```bash
+git checkout demo
 ```
+
+3. Instale as dependências:
+```bash
+pnpm install
+```
+
+4. Configure as variáveis de ambiente:
+```bash
+# Crie um arquivo .env.local na raiz do projeto com:
 NEXT_PUBLIC_API_URL=http://localhost:3010
 ```
 
-### 3. Executar o projeto
+5. Inicie o servidor de desenvolvimento:
 ```bash
-npm run dev
+pnpm dev
 ```
 
-### 4. Acessar o sistema
-- Abra http://localhost:3000 para ver a lista de tenants disponíveis
-- Clique em qualquer tenant para acessar o sistema
-- Use as credenciais fornecidas para fazer login
+A aplicação estará disponível em `http://localhost:3000`
 
-## 🏢 Tenants Disponíveis
+## 🔑 Acessando a Aplicação
 
-| Tenant | URL | Email | Senha |
-|--------|-----|-------|-------|
-| Crown Company | `/crown` | admin@crown.com | crown123 |
-| Lacoste Matriz | `/lacoste-matriz` | admin@lacoste.com | lacoste123 |
-| Lacoste Shopping | `/lacoste-loja-shopping` | admin@lacoste-shopping.com | loja123 |
-| McDonald's Matriz | `/mcdonalds-matriz` | admin@mcdonalds.com | mcdonalds123 |
-| Drogasil Matriz | `/drogasil-matriz` | admin@drogasil.com | drogasil123 |
+### Tenants Disponíveis
 
-## 🛠️ Tecnologias
+A aplicação suporta múltiplos tenants. Para acessar, use um dos seguintes URLs:
 
-- **Next.js 15** - Framework React
-- **TypeScript** - Tipagem estática
-- **Tailwind CSS** - Estilização
-- **shadcn/ui** - Componentes UI
-- **Lucide React** - Ícones
+- Crown IT (Admin): `http://localhost:3000/crown`
+  - Email: admin@crown.com
+  - Senha: 123456
 
-## 📁 Estrutura do Projeto
+### Funcionalidades Implementadas
 
-```
-src/
-├── app/
-│   ├── [tenant]/           # Rotas específicas do tenant
-│   │   ├── login/         # Página de login
-│   │   ├── dashboard/     # Dashboard principal
-│   │   └── page.tsx       # Página inicial do tenant
-│   └── page.tsx           # Lista de tenants
-├── components/
-│   ├── layout/            # Componentes de layout
-│   └── ui/                # Componentes UI (shadcn)
-├── contexts/
-│   └── AuthContext.tsx    # Context de autenticação
-└── types/
-    └── api.ts             # Tipos TypeScript
-```
+1. **Sistema de Tickets**
+   - Criação de tickets
+   - Visualização em lista
+   - Detalhes do ticket
+   - Atualização de status e prioridade
+   - UI otimista para melhor experiência do usuário
 
-## 🔐 Autenticação
+2. **Gestão de Categorias**
+   - Categorização de tickets
+   - Cores e ícones personalizados
+   - SLA por categoria
 
-O sistema usa JWT tokens para autenticação. O fluxo é:
-
-1. Usuário acessa `/{tenant}/login`
-2. Insere credenciais (email + senha)
-3. Sistema faz POST para `/{tenant}/auth/login`
-4. Recebe JWT token e dados do usuário
-5. Redireciona para `/{tenant}/dashboard`
-
-## 🎯 Funcionalidades
-
-- ✅ Login multi-tenant
-- ✅ Dashboard com informações do usuário/tenant
-- ✅ Proteção de rotas
-- ✅ Logout
-- ✅ Interface responsiva
-- ✅ Tratamento de erros
-
-## 📋 Próximos Passos
-
-- [ ] Implementar gestão de tickets
-- [ ] Adicionar mais páginas (usuários, relatórios, etc.)
-- [ ] Implementar refresh token
-- [ ] Adicionar testes
-- [ ] Melhorar tratamento de erros
+3. **Dashboard**
+   - Visão geral dos tickets
+   - Contadores por status
+   - Filtros e pesquisa
 
 ## 🔧 API
 
-Este frontend consome a API Multi-Tenant que deve estar rodando em `http://localhost:3010`.
+### Configuração da API
 
-Consulte a documentação da API para mais detalhes sobre os endpoints disponíveis.
+1. Clone o repositório da API:
+```bash
+git clone [URL_DO_REPOSITORIO_API]
+cd data_intelligence_api
+```
+
+2. Instale as dependências:
+```bash
+pnpm install
+```
+
+3. Configure o banco de dados:
+```bash
+# Configure suas variáveis de ambiente no .env
+# Execute as migrations
+pnpm prisma migrate dev
+```
+
+4. Inicie a API:
+```bash
+pnpm dev
+```
+
+A API estará disponível em `http://localhost:3010`
+
+## 📝 Notas de Desenvolvimento
+
+### Estrutura do Projeto
+
+- `/src/app/[tenant]` - Rotas e páginas específicas por tenant
+- `/src/components` - Componentes reutilizáveis
+- `/src/hooks` - Custom hooks para lógica de negócio
+- `/src/lib` - Utilitários e configurações
+- `/src/types` - Definições de tipos TypeScript
+
+### Padrões Utilizados
+
+1. **UI Otimista**
+   - Atualizações imediatas na interface
+   - Fallback em caso de erro
+   - Throttling para evitar chamadas desnecessárias
+
+2. **Gestão de Estado**
+   - Estados locais para UI
+   - Custom hooks para lógica de negócio
+   - Context API para estado global
+
+3. **Componentes**
+   - Componentes atômicos
+   - Shadcn/ui para base de componentes
+   - Tailwind CSS para estilização
+
+## 🤝 Contribuindo
+
+1. Crie uma branch para sua feature:
+```bash
+git checkout -b feature/nome-da-feature
+```
+
+2. Faça commit das alterações:
+```bash
+git commit -m "feat: Descrição da feature"
+```
+
+3. Push para a branch:
+```bash
+git push origin feature/nome-da-feature
+```
+
+4. Abra um Pull Request
+
+## 📫 Suporte
+
+Para suporte ou dúvidas, abra uma issue no repositório ou contate a equipe de desenvolvimento.
+
+## 📄 Licença
+
+Este projeto está sob a licença [LICENÇA]. Veja o arquivo LICENSE para mais detalhes.
