@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function LoginLayout({ children }: LoginLayoutProps) {
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-black">
             {children}
         </div>
     );
