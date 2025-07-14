@@ -2,6 +2,23 @@
 
 Este é o frontend do sistema de Data Intelligence, uma aplicação multi-tenant para gestão de tickets e suporte.
 
+> ⚠️ **IMPORTANTE**: Esta demo contém apenas as funcionalidades de gestão de tickets implementadas e testadas. Outras funcionalidades mencionadas estão em desenvolvimento e não devem ser consideradas para demonstração.
+
+## ✨ Funcionalidades Disponíveis para Demo
+
+1. **Autenticação**
+   - Acesso via `/crown/login`
+   - Login com email e senha
+
+2. **Gestão de Tickets** (`/crown/tickets`)
+   - ✅ Listagem de tickets
+   - ✅ Criação de novos tickets
+   - ✅ Visualização detalhada
+   - ✅ Atualização de status e prioridade
+   - ✅ Interface otimista para melhor experiência
+
+> 🚧 **Nota**: Outras rotas e funcionalidades estão em desenvolvimento e não fazem parte desta demonstração.
+
 ## 🚀 Configuração do Ambiente
 
 ### Pré-requisitos
@@ -39,36 +56,27 @@ NEXT_PUBLIC_API_URL=http://localhost:3010
 pnpm dev
 ```
 
-A aplicação estará disponível em `http://localhost:3000`
+## 🔑 Acessando a Demo
 
-## 🔑 Acessando a Aplicação
+1. Acesse: `http://localhost:3000/crown/login`
+2. Use as credenciais:
+   - Email: `admin@crown.com`
+   - Senha: `123456`
+3. Após o login, você será redirecionado para o dashboard
+4. Navegue para a seção de tickets em `/crown/tickets`
 
-### Tenants Disponíveis
+### Fluxo de Demonstração Recomendado
 
-A aplicação suporta múltiplos tenants. Para acessar, use um dos seguintes URLs:
+1. **Login**
+   - Acesse a página de login
+   - Use as credenciais fornecidas
 
-- Crown IT (Admin): `http://localhost:3000/crown`
-  - Email: admin@crown.com
-  - Senha: 123456
-
-### Funcionalidades Implementadas
-
-1. **Sistema de Tickets**
-   - Criação de tickets
-   - Visualização em lista
-   - Detalhes do ticket
-   - Atualização de status e prioridade
-   - UI otimista para melhor experiência do usuário
-
-2. **Gestão de Categorias**
-   - Categorização de tickets
-   - Cores e ícones personalizados
-   - SLA por categoria
-
-3. **Dashboard**
-   - Visão geral dos tickets
-   - Contadores por status
-   - Filtros e pesquisa
+2. **Gestão de Tickets**
+   - Crie um novo ticket usando o botão "Novo Chamado"
+   - Visualize a lista de tickets
+   - Clique em um ticket para ver os detalhes
+   - Teste a atualização de status e prioridade
+   - Observe a atualização instantânea da interface
 
 ## 🔧 API
 
@@ -109,7 +117,7 @@ A API estará disponível em `http://localhost:3010`
 - `/src/lib` - Utilitários e configurações
 - `/src/types` - Definições de tipos TypeScript
 
-### Padrões Utilizados
+### Padrões Implementados
 
 1. **UI Otimista**
    - Atualizações imediatas na interface
@@ -121,34 +129,19 @@ A API estará disponível em `http://localhost:3010`
    - Custom hooks para lógica de negócio
    - Context API para estado global
 
-3. **Componentes**
-   - Componentes atômicos
-   - Shadcn/ui para base de componentes
-   - Tailwind CSS para estilização
+### Em Desenvolvimento (Não Disponível na Demo)
 
-## 🤝 Contribuindo
+> ⚠️ As seguintes funcionalidades estão em desenvolvimento e NÃO devem ser consideradas para demonstração:
 
-1. Crie uma branch para sua feature:
-```bash
-git checkout -b feature/nome-da-feature
-```
-
-2. Faça commit das alterações:
-```bash
-git commit -m "feat: Descrição da feature"
-```
-
-3. Push para a branch:
-```bash
-git push origin feature/nome-da-feature
-```
-
-4. Abra um Pull Request
+- Dashboard e relatórios
+- Gestão de usuários
+- Configurações do tenant
+- Gestão de categorias
+- Notificações
+- Comentários em tickets
+- Atribuição de tickets
+- Avaliações e feedback
 
 ## 📫 Suporte
 
-Para suporte ou dúvidas, abra uma issue no repositório ou contate a equipe de desenvolvimento.
-
-## 📄 Licença
-
-Este projeto está sob a licença [LICENÇA]. Veja o arquivo LICENSE para mais detalhes.
+Para suporte ou dúvidas durante a demo, contate a equipe de desenvolvimento.
